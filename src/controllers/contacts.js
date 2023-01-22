@@ -1,5 +1,13 @@
+const { response } = require('express');
 const mongodb = require('../db/connect');
 const ObjectId = require('mongodb').ObjectId;
+
+function returnError(res, error) {
+  res.status(500).json({
+    message: 'An error occurred',
+    error: error
+  });
+}
 
 const getAll = async (req, res, next) => {
   const result = await mongodb.getDb().db().collection('contacts').find();
@@ -22,4 +30,61 @@ const getSingle = async (req, res, next) => {
   });
 };
 
-module.exports = { getAll, getSingle };
+const newContact  = async (req,res,next)=>{
+  const contact ={
+    firstName : req.body.firstName,
+    lastName : req.body.lastName,
+    email: req.body.email,
+    favoriteColor: req.body.favoriteColor,
+    birthday: req.body.birthday
+  };
+  const result = await mongodb
+  .getDb()
+  .db()
+  .collection('contacts')
+  .insertOne(contact);
+  if(result.acknowledged){
+    res.status(201).json(result);
+  } else{
+    returnError(res,result.error);
+  }
+};
+
+const updateContact = async (req,res,next)=>{
+  const userId = new ObjectId(req.params.id);
+  const contact ={
+    firstName : req.body.firstName,
+    lastName : req.body.lastName,
+    email: req.body.email,
+    favoriteColor: req.body.favoriteColor,
+    birthday: req.body.birthday
+  };
+const result = mongodb.getDb()
+.db()
+.collection('contacts')
+.replaceOne({_id:userId},contact);
+if(result.modifiedCount > 0){
+  result.status(204).json({
+    message: 'Contact successfully added'
+  })
+} else{
+  returnError(res,result.error);
+}
+  
+};
+
+const deleteContact  = async (req,res,next) =>{
+  const userId = new ObjectId(req.params.id);
+  result = await mongodb.getDb()
+  .db()
+  .collection('contacts')
+  .remove({_id:userId},true);
+  if(response.deletedCount >0){
+    res.status(204).json({message:'succesfully deleted'});
+  }else{
+    returnError(res,result.error);
+  }
+}
+
+
+module.exports = { getAll, getSingle ,deleteContact,updateContact,newContact};
